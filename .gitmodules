@@ -1,0 +1,3 @@
+[submodule "official-llm-zoomcamp-repo"]
+	path = official-llm-zoomcamp-repo
+	url = https://github.com/DataTalksClub/llm-zoomcamp.git
