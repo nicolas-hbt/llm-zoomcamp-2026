@@ -3,45 +3,57 @@ import time
 from tqdm.auto import tqdm
 from rag_helper import RAGBase
 
+from dataclasses import dataclass
+
+
+@dataclass
+class CostResult:
+    input_cost: float
+    output_cost: float
+    total_cost: float
 
 def calc_price(usage):
     input_price_per_million = 0.75
     output_price_per_million = 4.50
 
-    input_cost = (usage.input_tokens / 1_000_000) * input_price_per_million
-    output_cost = (usage.output_tokens / 1_000_000) * output_price_per_million
-    total_cost = input_cost + output_cost
-
-    return {
-        "input_cost": input_cost,
-        "output_cost": output_cost,
-        "total_cost": total_cost,
-    }
-
+    # Note: Use prompt_tokens and completion_tokens for modern OpenAI objects
+    input_cost = (usage.prompt_tokens / 1_000_000) * input_price_per_million
+    output_cost = (usage.completion_tokens / 1_000_000) * output_price_per_million
+    
+    return CostResult(
+        input_cost=input_cost,
+        output_cost=output_cost,
+        total_cost=input_cost + output_cost
+    )
 
 def calc_total_price(usages):
-    total_cost = 0.0
-
-    for usage in usages:
-        cost = calc_price(usage)
-        total_cost = total_cost + cost["total_cost"]
-
-    return total_cost
+    # Using a generator expression for cleaner code
+    return sum(calc_price(usage).total_cost for usage in usages)
 
 
-def llm_structured(client, instructions, user_prompt, output_type, model="llama-3.3-70b-versatile"):
+def llm_structured(client, instructions, user_prompt, output_type, model="openai/gpt-oss-120b"): # Use a compatible model
     messages = [
         {"role": "developer", "content": instructions},
         {"role": "user", "content": user_prompt}
     ]
 
-    response = client.responses.parse(
+    response = client.chat.completions.create(
         model=model,
-        input=messages,
-        text_format=output_type
+        messages=messages,
+        response_format={
+            "type": "json_schema",
+            "json_schema": {
+                "name": "structured_output", # Must follow ^[a-zA-Z0-9_-]+$
+                "schema": output_type.model_json_schema()
+            }
+        }
     )
 
-    return response.output_parsed, response.usage
+    # Parse the content string back into Pydantic model
+    content = response.choices[0].message.content
+    parsed_output = output_type.model_validate_json(content)
+    
+    return parsed_output, response.usage
 
 
 def llm_structured_retry(
