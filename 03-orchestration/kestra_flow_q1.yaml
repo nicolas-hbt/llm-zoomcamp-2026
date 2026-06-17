@@ -1,0 +1,16 @@
+id: load_nyc_taxi_data
+namespace: dev
+tasks:
+  - id: download_taxi_data
+    type: io.kestra.plugin.core.http.Download
+    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv # Replace with the actual URL of your NYC taxi data CSV
+    saveAs: nyc_taxi_data.csv
+  - id: load_to_bigquery
+    type: io.kestra.plugin.gcp.bigquery.Load
+    from: "{{ outputs.download_taxi_data.uri }}"
+    destinationTable: "your_gcp_project.your_bigquery_dataset.nyc_taxi_data" # Replace with your actual GCP project, BigQuery dataset, and table name
+    format: CSV
+    csvOptions:
+      skipLeadingRows: 1 # Set to 1 if your CSV has a header row, 0 otherwise
+      fieldDelimiter: "," # Adjust if your CSV uses a different delimiter (e.g., ';')
+    projectId: "your_gcp_project_id" # Replace with your actual GCP project ID
