@@ -29,7 +29,7 @@ def calc_total_price(usages):
     return total_cost
 
 
-def llm_structured(client, instructions, user_prompt, output_type, model="llama-3.3-70b-versatile"):
+def llm_structured(client, instructions, user_prompt, output_type, model="openai/gpt-oss-120b"):
     messages = [
         {"role": "developer", "content": instructions},
         {"role": "user", "content": user_prompt}
@@ -49,7 +49,7 @@ def llm_structured_retry(
     instructions,
     user_prompt,
     output_type,
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-120b",
     max_retries=3,
 ):
     for attempt in range(max_retries):
