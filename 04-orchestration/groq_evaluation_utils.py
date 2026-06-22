@@ -61,7 +61,7 @@ def llm_structured_retry(
     instructions,
     user_prompt,
     output_type,
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-120b", # Use a compatible model
     max_retries=3,
 ):
     for attempt in range(max_retries):
